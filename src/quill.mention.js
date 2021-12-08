@@ -47,6 +47,7 @@ class Mention {
       fixMentionsToQuill: false,
       positioningStrategy: "normal",
       defaultMenuOrientation: "bottom",
+      menuOrientationAutoFlip: false,
       blotName: "mention",
       dataAttributes: ["id", "value", "denotationChar", "link", "target", "disabled"],
       linkTarget: "_blank",
@@ -241,9 +242,8 @@ class Mention {
       this.mentionList.childNodes[
         this.itemIndex
       ].dataset.value = `<a href="${link}" target=${itemTarget ||
-        this.options.linkTarget}>${
-        this.mentionList.childNodes[this.itemIndex].dataset.value
-      }`;
+      this.options.linkTarget}>${this.mentionList.childNodes[this.itemIndex].dataset.value
+        }`;
     }
     return this.mentionList.childNodes[this.itemIndex].dataset;
   }
@@ -379,7 +379,7 @@ class Mention {
           : "";
         if (data[i].disabled) {
           li.className += " disabled";
-          li.setAttribute('aria-hidden','true');
+          li.setAttribute('aria-hidden', 'true');
         } else if (initialSelection === -1) {
           initialSelection = i;
         }
@@ -515,18 +515,21 @@ class Mention {
           mentionCharPos.top - (containerHeight + this.options.offsetTop);
       }
 
-      // default to bottom if the top is not visible
-      if (topPos + containerPos.top <= 0) {
-        let overMentionCharPos = this.options.offsetTop;
+      if (this.options.menuOrientationAutoFlip) {
+        // default to bottom if the top is not visible
+        if (topPos + containerPos.top <= 0) {
+          let overMentionCharPos = this.options.offsetTop;
 
-        if (this.options.fixMentionsToQuill) {
-          overMentionCharPos += containerPos.height;
-        } else {
-          overMentionCharPos += mentionCharPos.bottom;
+          if (this.options.fixMentionsToQuill) {
+            overMentionCharPos += containerPos.height;
+          } else {
+            overMentionCharPos += mentionCharPos.bottom;
+          }
+
+          topPos = overMentionCharPos;
         }
-
-        topPos = overMentionCharPos;
       }
+
     } else {
       // Attempt to align the mention container with the bottom of the quill editor
       if (this.options.fixMentionsToQuill) {
@@ -535,15 +538,17 @@ class Mention {
         topPos += mentionCharPos.bottom;
       }
 
-      // default to the top if the bottom is not visible
-      if (this.containerBottomIsNotVisible(topPos, containerPos)) {
-        let overMentionCharPos = this.options.offsetTop * -1;
+      if (this.options.menuOrientationAutoFlip) {
+        // default to the top if the bottom is not visible
+        if (this.containerBottomIsNotVisible(topPos, containerPos)) {
+          let overMentionCharPos = this.options.offsetTop * -1;
 
-        if (!this.options.fixMentionsToQuill) {
-          overMentionCharPos += mentionCharPos.top;
+          if (!this.options.fixMentionsToQuill) {
+            overMentionCharPos += mentionCharPos.top;
+          }
+
+          topPos = overMentionCharPos - containerHeight;
         }
-
-        topPos = overMentionCharPos - containerHeight;
       }
     }
 
@@ -666,12 +671,12 @@ class Mention {
     );
 
     if (
-        hasValidMentionCharIndex(
-          mentionCharIndex,
-          textBeforeCursor,
-          this.options.isolateCharacter
-        )
-      ) {
+      hasValidMentionCharIndex(
+        mentionCharIndex,
+        textBeforeCursor,
+        this.options.isolateCharacter
+      )
+    ) {
       const mentionCharPos = this.cursorPos - (textBeforeCursor.length - mentionCharIndex);
       this.mentionCharPos = mentionCharPos;
       const textAfter = textBeforeCursor.substring(
